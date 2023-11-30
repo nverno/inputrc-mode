@@ -1,0 +1,43 @@
+# @See https://ftp.gnu.org/old-gnu/Manuals/gdb/html_chapter/gdb_24.html
+# @See readline(3readline) and `info rluserman' for more information
+
+# Include systemwide bindings and variable assignment from /etc/inputrc 
+$include /etc/inputrc
+
+set editing-mode emacs
+set input-meta on
+set convert-meta off
+set output-meta on
+set completion-query-items 150
+set completion-ignore-case on
+# only one tab required instead of two
+set show-all-if-ambiguous on
+
+"\e[B": history-search-forward
+"\e[A": history-search-backward
+"\C-\M-p": history-search-backward
+"\C-\M-n": history-search-forward
+
+$if mode=emacs
+  Meta-Control-h: backward-kill-word  Text after the function name is ignored
+  "\C-u":         universal-argument  skdfkasdf
+  "\M-[D":        backward-char
+  "\M-[C":        forward-char
+  "\M-[A":        previous-history
+  "\M-[B":        next-history
+  C-q:            quoted-insert
+$endif
+
+$if Bash
+  "\C-xp": "PATH=${PATH}\e\C-e\C-a\ef\C-f"
+  Control-o: "> ouptut"
+$else
+  $if Ftp
+    "\C-xg": "get \M-?"
+    "\C-xt": "put \M-?"
+    "\M-.": yank-last-arg
+  $else
+    # akkk
+    "\C-xg": "get \M-?" # kadfsdf
+  $endif
+$endif
