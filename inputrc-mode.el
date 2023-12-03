@@ -597,7 +597,6 @@ See `smie-rules-function' for description of KIND and TOKEN."
     ;; Key-bindings
     ((lambda (lim)
        (and (re-search-forward "\\(\\\\[A-Za-z]\\(?:-[^\\]?\\)?\\)" lim t)
-            (nvp:ppss 'str)
             (null (nth 4 (syntax-ppss (match-beginning 0))))))
      (1 'font-lock-type-face prepend))
     ;; "keyseq": function-name or macro
