@@ -1,9 +1,9 @@
-;;; inputrc-mode.el --- Major mode for readline(3) configuration -*- lexical-binding: t; -*-
+;;; inputrc-mode.el --- Major mode for readline configuration -*- lexical-binding: t; -*-
 
 ;; Author: Noah Peart <noah.v.peart@gmail.com>
 ;; URL: https://github.com/nverno/inputrc-mode
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "27.1"))
 ;; Created: 30 November 2023
 ;; Keywords: languages, readline, config
 
@@ -31,7 +31,7 @@
 ;; Features:
 ;; - font-locking
 ;; - indentation
-;; - completion-at-point for variables + commands
+;; - completion-at-point for readline variables + commands
 ;;
 ;;; Code:
 
@@ -47,19 +47,6 @@
   :type 'integer
   :safe 'integerp)
 
-(defvar inputrc-mode--read-manpage-exe (expand-file-name "bin/readline.awk"))
-
-(defun inputrc-mode--read-manpage ()
-  "Get readline \"set\" variables and descriptions from manpage."
-  (with-temp-buffer
-    (unless (zerop (call-process-shell-command
-                    (format (concat "env TERM=dumb MAN_KEEP_FORMATTING=1 "
-                                    "man 3 readline 2>/dev/null | awk -f %s")
-                            inputrc-mode--read-manpage-exe)
-                    nil (current-buffer) nil))
-      (user-error "Failed to read readline variables"))
-    (goto-char (point-min))
-    (read (current-buffer))))
 
 (defvar inputrc-mode-variables)
 (defvar inputrc-mode-commands)
@@ -499,6 +486,7 @@ that it can be made part of an inputrc file.")
 ;;; Completion
 
 (defun inputrc-mode--doc-buffer (arg)
+  "Return documentation buffer for ARG."
   (cl-destructuring-bind (&key doc default)
       (gethash arg inputrc-mode-docs)
     (let ((doc (concat
@@ -513,6 +501,7 @@ that it can be made part of an inputrc file.")
           (current-buffer))))))
 
 (defun inputrc-mode--annotation (arg)
+  "Return annotation for completion candidate ARG."
   (when-let (def (plist-get (gethash arg inputrc-mode-docs) :default))
     (concat " " def)))
 
@@ -563,12 +552,23 @@ that it can be made part of an inputrc file.")
            (exp))))))
 
 (defun inputrc-mode-smie-rules (kind token)
+  "Indentation rules for `inputrc-mode'.
+See `smie-rules-function' for description of KIND and TOKEN."
   (pcase (cons kind token)
     (`(:elem . basic) inputrc-mode-indent-level)
-    (`(:elem . args) (- inputrc-mode-indent-level))
+    (`(:elem . args))
     (`(:after . ,(or "$if" "$else")) inputrc-mode-indent-level)
-    (`(:list-intro . "") t)
+    (`(:list-intro . ,(or "$if" "$else" "")) t)
     (`(:close-all . ,_) t)))
+
+(defun inputrc-mode-backward-token ()
+  "Function for `smie-backward-token-function' to find previous token."
+  (forward-comment (- (point)))
+  (beginning-of-line)
+  (skip-syntax-forward " " (line-end-position))
+  (if (looking-at (rx (or "$if" "$else" "$endif")))
+      (match-string 0)
+    "\n"))
 
 ;;; Font-locking
 
@@ -590,14 +590,14 @@ that it can be made part of an inputrc file.")
     ("^\\s-*\\$if[ \t]+\\(version\\)[ \t]*\\(!=\\|[<=>]=\\|[<=>]\\)?"
      (1 font-lock-keyword-face)
      (2 'font-lock-operator-face))
-    ("^\\s-*\\$if[ \t]+\\(variable\\)[ \t]+\\([!=]?=\\)?[ \t]*\\([^\n]*\\)?"
-     (1 font-lock-keyword-face)
-     (2 'font-lock-operator-face)
-     (3 font-lock-string-face))
+    ("^\\s-*\\$if[ \t]+\\([[:graph:]]+\\)[ \t]+\\([!=]?=\\)[ \t]*\\([^\n]*\\)?"
+     (1 'font-lock-variable-use-face)
+     (2 'font-lock-operator-face))
     ("^\\s-*\\$if[ \t]+\\([[:alpha:]]+\\)" (1 font-lock-type-face))
     ;; Key-bindings
     ((lambda (lim)
        (and (re-search-forward "\\(\\\\[A-Za-z]\\(?:-[^\\]?\\)?\\)" lim t)
+            (nvp:ppss 'str)
             (null (nth 4 (syntax-ppss (match-beginning 0))))))
      (1 'font-lock-type-face prepend))
     ;; "keyseq": function-name or macro
@@ -615,7 +615,9 @@ that it can be made part of an inputrc file.")
   (goto-char start)
   (funcall
    (syntax-propertize-rules
-    ("\\([[:graph:]]+\\)[ \t]*:[ \t]*\\([[:graph:]]+\\)[ \t]+\\([^ \t\n]\\)"
+    ;; Font-lock ignored text after bindings as comment, eg.
+    ;;   "\C-u": universal-argument  <any trailing text is ignored>
+    ("\"?\\([[:graph:]]+\\)\"?[ \t]*:[ \t]*\"?\\([[:graph:]]+\\)\"?[ \t]+\\([^ \t\n]\\)"
      (3 "<")))
    (point) end))
 
@@ -635,7 +637,8 @@ that it can be made part of an inputrc file.")
   :group 'conf
   (conf-mode-initialize "#")
   (setq-local font-lock-defaults '(inputrc-mode-font-lock-keywords))
-  (smie-setup inputrc-mode-grammar #'inputrc-mode-smie-rules)
+  (smie-setup inputrc-mode-grammar #'inputrc-mode-smie-rules
+              :backward-token #'inputrc-mode-backward-token)
   (setq-local syntax-propertize-function #'inputrc-mode--syntax-propertize)
   (add-hook 'completion-at-point-functions #'inputrc-mode-completion-at-point nil t))
 

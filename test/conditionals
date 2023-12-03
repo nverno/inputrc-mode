@@ -1,0 +1,52 @@
+# -*- mode: inputrc; -*-
+
+set convert-meta on
+
+# mode
+$if mode=emacs
+  "\C-xe": "echo emacs"
+$endif
+
+# term
+$if term=sun
+  "\C-xT": "sun"
+  # ...
+  # ..
+  # .
+$else
+  "\C-xT": "not sun"
+  # ;;;
+$endif
+
+# version
+$if version <= 7.1
+  "\C-xv": "version <= 7.1"
+  # ...
+$else
+  # nested conditionals
+  $if version == 8.1
+    "\C-xv": "version == 8.1"
+    # askdf
+  $else
+    $if version > 8.1
+      "\C-xv": "version > 8.1"
+      # askdf
+    $else
+      "\C-xv": "some other version"
+    $endif
+  $endif
+$endif
+
+# variable
+$if convert-meta == on
+  "\C-xc": "> echo convert-meta: on"
+$else
+  "\C-xc": "convert-meta: off"
+$endif
+
+# application
+$if Bash
+  "\C-xt": "echo Bash"
+$else
+  "\C-xt": "echo not Bash"
+$endif

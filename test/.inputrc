@@ -19,17 +19,17 @@ set show-all-if-ambiguous on
 "\C-\M-n": history-search-forward
 
 $if mode=emacs
-  Meta-Control-h: backward-kill-word  Text after the function name is ignored
+  Meta-Control-h:   backward-kill-word  Text after the function name is ignored
   "\C-u":         universal-argument  skdfkasdf
   "\M-[D":        backward-char
   "\M-[C":        forward-char
   "\M-[A":        previous-history
   "\M-[B":        next-history
-  C-q:            quoted-insert
+  Control-q:      quoted-insert
 $endif
 
 $if Bash
-  "\C-xp": "PATH=${PATH}\e\C-e\C-a\ef\C-f"
+  "\C-xp": "PATH=${PATH}\e\C-e\C-a\ef\C-f"        ignored ignored...
   Control-o: "> ouptut"
 $else
   $if Ftp
@@ -39,5 +39,9 @@ $else
   $else
     # akkk
     "\C-xg": "get \M-?" # kadfsdf
+    "\M-[D":        backward-char
+    "\M-[C":        forward-char
+    "\M-[A":        previous-history
+    "\M-[B":        next-history
   $endif
 $endif
