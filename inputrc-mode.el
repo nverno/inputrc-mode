@@ -515,19 +515,20 @@ that it can be made part of an inputrc file.")
            (bol (line-beginning-position))
            (set-p)
            (cmd-p)
-           (beg (condition-case nil
-                    (save-excursion
-                      (skip-syntax-backward "w_" bol)
-                      (setq set-p (ignore-errors
-                                    (looking-back "^\\s-*set\\s-+" bol)))
-                      (prog1 (point)
-                        (skip-syntax-backward " " bol)
-                        (setq cmd-p (eq ?: (char-before)))))
-                  (scan-error nil)))
+           (beg (save-excursion
+                  (skip-syntax-backward "w_" bol)
+                  (setq set-p (ignore-errors
+                                (looking-back "^\\s-*set\\s-+" bol)))
+                  (prog1 (point)
+                    (skip-syntax-backward " " bol)
+                    (setq cmd-p (eq ?: (char-before))))))
+           (end (save-excursion
+                  (skip-syntax-forward "w_")
+                  (point)))
            (cond-p (eq ?$ (char-before beg))))
-      (when (and pos beg (>= pos beg)
+      (when (and beg end (>= end beg)
                  (or set-p cond-p cmd-p))
-        (nconc (list beg pos)
+        (nconc (list beg end)
                (cond
                 (cond-p
                  (list (completion-table-dynamic
