@@ -564,12 +564,13 @@ See `smie-rules-function' for description of KIND and TOKEN."
 
 (defun inputrc-mode-backward-token ()
   "Function for `smie-backward-token-function' to find previous token."
-  (forward-comment (- (point)))
-  (beginning-of-line)
-  (skip-syntax-forward " " (line-end-position))
-  (if (looking-at (rx (or "$if" "$else" "$endif")))
-      (match-string 0)
-    "\n"))
+  (if (bobp) ""
+    (forward-comment (- (point)))
+    (forward-line 0)
+    (skip-syntax-forward " " (line-end-position))
+    (if (looking-at (rx "$" (or "if" "else" "endif") eow))
+        (match-string-no-properties 0)
+      "\n")))
 
 ;;; Font-locking
 
