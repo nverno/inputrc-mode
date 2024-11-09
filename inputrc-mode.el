@@ -502,7 +502,7 @@ that it can be made part of an inputrc file.")
 
 (defun inputrc-mode--annotation (arg)
   "Return annotation for completion candidate ARG."
-  (when-let (def (plist-get (gethash arg inputrc-mode-docs) :default))
+  (when-let* ((def (plist-get (gethash arg inputrc-mode-docs) :default)))
     (concat " " def)))
 
 (defun inputrc-mode-completion-at-point ()
@@ -511,8 +511,7 @@ that it can be made part of an inputrc file.")
             (or (car (setq syn (nthcdr 3 syn)))
                 (car (setq syn (cdr syn)))
                 (nth 3 syn)))
-    (let* ((pos (point))
-           (bol (line-beginning-position))
+    (let* ((bol (line-beginning-position))
            (set-p)
            (cmd-p)
            (beg (save-excursion
